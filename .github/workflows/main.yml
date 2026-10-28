@@ -1,0 +1,37 @@
+name: Acurast Daily Tracker
+
+on:
+  schedule:
+    # Se ejecuta todos los días a las 08:00 UTC (09:00 / 10:00 hora de España)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Te permite añadir un botón para ejecutarlo a mano cuando quieras
+
+permissions:
+  contents: write # Permiso vital para que GitHub pueda guardar el CSV actualizado
+
+jobs:
+  track-acu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Descargar archivos del repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Instalar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 3. Instalar substrate-interface
+        run: pip install substrate-interface
+
+      - name: 4. Ejecutar Acurast Tracker
+        run: python acurast_tracker.py
+
+      - name: 5. Guardar CSV y JSON actualizados en GitHub
+        run: |
+          git config --global user.name "Acurast Bot"
+          git config --global user.email "bot@noreply.github.com"
+          git add ultimo_estado_acu.json historico_acu.csv
+          git diff --staged --quiet || git commit -m "Actualización automática de ACU"
+          git push
