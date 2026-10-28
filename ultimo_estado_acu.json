@@ -1,0 +1,35 @@
+{
+    "timestamp": "2026-10-28 23:42:06",
+    "saldos": {
+        "Manager_Principal": {
+            "direccion": "5CjskL7i1Kj6sfFs3nqmDDWdsKEahJjBZmAW9XEtP4QAkHNC",
+            "free": 2.831565,
+            "reserved": 0.0,
+            "total": 2.831565
+        },
+        "Core_Movil_1": {
+            "direccion": "5GXvt2nJSg4612pkM2NQderzRBQrY3FnkCKCn5AEsM4GmnWg",
+            "free": 0.0,
+            "reserved": 0.0,
+            "total": 0.0
+        },
+        "Core_Movil_2": {
+            "direccion": "5ES9EdLVYgDyrAFbgokWCcCBVqNKdLUr8o5u2miUggckSDqm",
+            "free": 0.0,
+            "reserved": 0.0,
+            "total": 0.0
+        },
+        "Lite_Movil_3": {
+            "direccion": "5DvQWjV73eYCgEMqfqHXZdKUewG9Pw6kXvZpWESfGhyp8rfw",
+            "free": 0.0,
+            "reserved": 0.0,
+            "total": 0.0
+        },
+        "Lite_Movil_4": {
+            "direccion": "5F1KmNYWDSzGUtVWEPBYbr9eJQ74oeshFyxjkRZgwXZB81Ku",
+            "free": 0.0,
+            "reserved": 0.0,
+            "total": 0.0
+        }
+    }
+}

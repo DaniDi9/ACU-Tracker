@@ -1,0 +1,6 @@
+Fecha_Hora,Dispositivo_Cuenta,ACU_Libre,ACU_Reservado,ACU_Total,Delta_ACU,Horas_Franja,Ritmo_24h_ACU
+2026-10-28 23:42:06,Manager_Principal,2.831565,0.0,2.831565,0.0,24.0,0.0
+2026-10-28 23:42:06,Core_Movil_1,0.0,0.0,0.0,0.0,24.0,0.0
+2026-10-28 23:42:06,Core_Movil_2,0.0,0.0,0.0,0.0,24.0,0.0
+2026-10-28 23:42:06,Lite_Movil_3,0.0,0.0,0.0,0.0,24.0,0.0
+2026-10-28 23:42:06,Lite_Movil_4,0.0,0.0,0.0,0.0,24.0,0.0
