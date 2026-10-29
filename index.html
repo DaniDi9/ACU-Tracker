@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acurast Farm Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --accent: #38bdf8;
+      --accent-green: #4ade80;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 1.5rem; max-width: 1000px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    h1 { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .updated { font-size: 0.85rem; color: var(--text-dim); }
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .card { background-color: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+    .card-title { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card-value { font-size: 1.8rem; font-weight: bold; }
+    .highlight-green { color: var(--accent-green); }
+    .chart-container { background-color: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 2rem; height: 350px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
+    th { color: var(--text-dim); border-bottom: 1px solid var(--border); padding: 0.75rem 0.5rem; font-weight: 600; }
+    td { padding: 0.75rem 0.5rem; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    .positive { color: var(--accent-green); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>Acurast Farm Dashboard</h1>
+      <p class="updated" id="lastUpdated">Cargando datos...</p>
+    </div>
+  </header>
+
+  <section class="metrics-grid">
+    <div class="card">
+      <div class="card-title">Saldo Total Manager</div>
+      <div class="card-value" id="totalBalance">-- ACU</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Último Delta Generado</div>
+      <div class="card-value highlight-green" id="lastDelta">-- ACU</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Ritmo Medio (24h)</div>
+      <div class="card-value" id="avgDailyRate">-- ACU/día</div>
+    </div>
+  </section>
+
+  <div class="chart-container">
+    <canvas id="deltaChart"></canvas>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <div class="card-title" style="margin-bottom: 1rem;">Historial de Franjas (Manager)</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha y Hora (UTC)</th>
+          <th>Saldo Total</th>
+          <th>Generado (Delta)</th>
+          <th>Franja</th>
+          <th>Proyección 24h</th>
+        </tr>
+      </thead>
+      <tbody id="historyTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    async function loadData() {
+      try {
+        const response = await fetch('historico_acu.csv?t=' + new Date().getTime());
+        const csvText = await response.text();
+
+        Papa.parse(csvText, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            renderDashboard(results.data);
+          }
+        });
+      } catch (e) {
+        document.getElementById('lastUpdated').innerText = 'Error al cargar el CSV: ' + e;
+      }
+    }
+
+    function renderDashboard(data) {
+      // Filtrar filas del Manager Principal
+      const managerRows = data.filter(r => 
+        (r.Dispositivo_Cuenta && r.Dispositivo_Cuenta.includes("Manager")) ||
+        (!r.Dispositivo_Cuenta && r.ACU_Total !== undefined)
+      );
+
+      if (managerRows.length === 0) {
+        document.getElementById('lastUpdated').innerText = 'No se encontraron datos del Manager.';
+        return;
+      }
+
+      const latest = managerRows[managerRows.length - 1];
+      document.getElementById('lastUpdated').innerText = 'Última actualización: ' + latest.Fecha_Hora;
+      document.getElementById('totalBalance').innerText = parseFloat(latest.ACU_Total).toFixed(2) + ' ACU';
+      
+      const lastDeltaVal = parseFloat(latest.Delta_ACU || 0);
+      document.getElementById('lastDelta').innerText = (lastDeltaVal >= 0 ? '+' : '') + lastDeltaVal.toFixed(4) + ' ACU';
+
+      // Calcular ritmo medio 24h de las lecturas válidas
+      const validRates = managerRows.map(r => parseFloat(r.Ritmo_24h_ACU)).filter(r => !isNaN(r) && r > 0);
+      const avgRate = validRates.length > 0 ? (validRates.reduce((a, b) => a + b, 0) / validRates.length) : 0;
+      document.getElementById('avgDailyRate').innerText = avgRate.toFixed(2) + ' ACU/d';
+
+      // Rellenar tabla (orden invertido: más recientes primero)
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '';
+      [...managerRows].reverse().forEach(row => {
+        const tr = document.createElement('tr');
+        const delta = parseFloat(row.Delta_ACU || 0);
+        tr.innerHTML = `
+          <td>${row.Fecha_Hora}</td>
+          <td>${parseFloat(row.ACU_Total).toFixed(4)} ACU</td>
+          <td class="${delta >= 0 ? 'positive' : ''}">${delta >= 0 ? '+' : ''}${delta.toFixed(4)} ACU</td>
+          <td>${row.Horas_Franja || 24}h</td>
+          <td>${parseFloat(row.Ritmo_24h_ACU || 0).toFixed(4)} ACU/d</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Crear Gráfico de Barras con Chart.js
+      const labels = managerRows.map(r => (r.Fecha_Hora || '').split(' ')[0]);
+      const deltas = managerRows.map(r => parseFloat(r.Delta_ACU || 0));
+
+      const ctx = document.getElementById('deltaChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'ACU generados por franja',
+            data: deltas,
+            backgroundColor: '#38bdf8',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#94a3b8' } }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+          }
+        }
+      });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
