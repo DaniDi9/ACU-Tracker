@@ -2,15 +2,21 @@ name: Acurast Daily Tracker
 
 on:
   schedule:
-    # Se ejecuta todos los días a las 07:00 UTC (08:00 / 9:00 hora de España) y 19 UTC
-    - cron: '0 7, 19 * *'
+    # 07:00 UTC = 08:00 España (invierno) | 19:00 UTC = 20:00 España (invierno)
+    - cron: '0 7,19 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  track-acu:
+  track-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: 1. Descargar archivos del repositorio
@@ -32,5 +38,16 @@ jobs:
           git config --global user.name "Acurast Bot"
           git config --global user.email "bot@noreply.github.com"
           git add ultimo_estado_acu.json historico_acu.csv
-          git diff --staged --quiet || git commit -m "Actualización automática de ACU"
-          git push
+          git diff --staged --quiet || (git commit -m "Actualización automática de ACU" && git push)
+
+      - name: 6. Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 7. Empaquetar web actualizada
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: 8. Desplegar en la web
+        id: deployment
+        uses: actions/deploy-pages@v4
