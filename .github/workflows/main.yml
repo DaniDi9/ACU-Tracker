@@ -2,8 +2,8 @@ name: Acurast Daily Tracker
 
 on:
   schedule:
-    # Se ejecuta todos los días a las 08:00 UTC (09:00 / 10:00 hora de España)
-    - cron: '0 8 * * *'
+    # Se ejecuta todos los días a las 07:00 UTC (08:00 / 9:00 hora de España) y 19 UTC
+    - cron: '0 7, 19 * *'
   workflow_dispatch:
 
 permissions:
