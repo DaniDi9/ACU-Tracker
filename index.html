@@ -53,7 +53,7 @@
       <div class="card-value highlight-green" id="lastDelta">-- ACU</div>
     </div>
     <div class="card">
-      <div class="card-title">Ritmo Medio (24h)</div>
+      <div class="card-title">Ritmo Medio Real (24h)</div>
       <div class="card-value" id="avgDailyRate">-- ACU/día</div>
     </div>
   </section>
@@ -110,18 +110,25 @@
       }
 
       const latest = managerRows[managerRows.length - 1];
+      const totalActual = parseFloat(latest.ACU_Total || 0);
+
       document.getElementById('lastUpdated').innerText = 'Última actualización: ' + latest.Fecha_Hora;
-      document.getElementById('totalBalance').innerText = parseFloat(latest.ACU_Total).toFixed(2) + ' ACU';
+      document.getElementById('totalBalance').innerText = totalActual.toFixed(2) + ' ACU';
       
       const lastDeltaVal = parseFloat(latest.Delta_ACU || 0);
       document.getElementById('lastDelta').innerText = (lastDeltaVal >= 0 ? '+' : '') + lastDeltaVal.toFixed(4) + ' ACU';
 
-      // Calcular ritmo medio 24h de las lecturas válidas
-      const validRates = managerRows.map(r => parseFloat(r.Ritmo_24h_ACU)).filter(r => !isNaN(r) && r > 0);
-      const avgRate = validRates.length > 0 ? (validRates.reduce((a, b) => a + b, 0) / validRates.length) : 0;
+      // Filtrar deltas válidos (ignora filas donde el delta es igual/cercano al saldo completo de inicialización)
+      const validRates = managerRows
+        .map(r => parseFloat(r.Ritmo_24h_ACU))
+        .filter(r => !isNaN(r) && r > 0 && r < (totalActual * 0.5));
+
+      const avgRate = validRates.length > 0 
+        ? (validRates.reduce((a, b) => a + b, 0) / validRates.length) 
+        : 0;
       document.getElementById('avgDailyRate').innerText = avgRate.toFixed(2) + ' ACU/d';
 
-      // Rellenar tabla (orden invertido: más recientes primero)
+      // Rellenar tabla en orden inverso (más recientes arriba)
       const tbody = document.getElementById('historyTableBody');
       tbody.innerHTML = '';
       [...managerRows].reverse().forEach(row => {
@@ -137,9 +144,14 @@
         tbody.appendChild(tr);
       });
 
-      // Crear Gráfico de Barras con Chart.js
-      const labels = managerRows.map(r => (r.Fecha_Hora || '').split(' ')[0]);
-      const deltas = managerRows.map(r => parseFloat(r.Delta_ACU || 0));
+      // Filtrar para el gráfico solo lecturas con deltas normales (excluye el primer pico de inicialización)
+      const chartRows = managerRows.filter(r => {
+        const d = parseFloat(r.Delta_ACU || 0);
+        return d >= 0 && d < (totalActual * 0.5);
+      });
+
+      const labels = chartRows.map(r => (r.Fecha_Hora || '').split(' ')[0]);
+      const deltas = chartRows.map(r => parseFloat(r.Delta_ACU || 0));
 
       const ctx = document.getElementById('deltaChart').getContext('2d');
       new Chart(ctx, {
