@@ -2,8 +2,9 @@ name: Acurast Daily Tracker
 
 on:
   schedule:
-    # 07:12 UTC = 08:12 España (invierno) | 19:12 UTC = 22:12 España (invierno)
-    - cron: '12 7,19 * * *'
+    # 06:23 UTC = 08:23 España (verano/CEST) | 18:23 UTC = 20:23 España (verano/CEST)
+    # En invierno (CET), 06:23 UTC pasará a ser las 07:23 España
+    - cron: '23 6,18 * * *'
   workflow_dispatch:
 
 permissions:
