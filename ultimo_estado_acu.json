@@ -1,11 +1,11 @@
 {
-    "timestamp": "2026-11-19 00:30:39",
+    "timestamp": "2026-11-19 15:53:11",
     "saldos": {
         "Manager_Principal": {
             "direccion": "5CjskL7i1Kj6sfFs3nqmDDWdsKEahJjBZmAW9XEtP4QAkHNC",
-            "free": 20.681822,
+            "free": 21.155243,
             "reserved": 0.0,
-            "total": 20.681822
+            "total": 21.155243
         },
         "Core_Movil_1": {
             "direccion": "5GXvt2nJSg4612pkM2NQderzRBQrY3FnkCKCn5AEsM4GmnWg",
